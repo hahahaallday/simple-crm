@@ -1,40 +1,7 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Django
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-media/
-staticfiles/
-
-# Virtual Environment
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
+# Supabase
+**/supabase/.branches
+**/supabase/.temp
+**/supabase/functions/*/.env
 
 # Environment variables
 .env
@@ -69,11 +36,6 @@ htmlcov/
 .tox/
 coverage/
 
-# Docker
-*.pid
-*.seed
-*.pid.lock
-
 # Logs
 logs/
 *.log
@@ -92,13 +54,6 @@ Thumbs.db
 *.key
 *.crt
 secrets/
-
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# Redis dump
-dump.rdb
 
 # Claude Code plan files (optional - comment out if you want to commit plans)
 .claude/plans/
