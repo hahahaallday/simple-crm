@@ -369,32 +369,54 @@ User {
 
 Based on project requirements for rapid development, scalability, and cross-border ecommerce features, the following stack has been selected:
 
-### Backend
-- **Framework**: Django 5.x + Django REST Framework
-- **Language**: Python 3.11+
-- **Database**: PostgreSQL 16
-- **Cache**: Redis 7.x
-- **Task Queue**: Celery + Redis
-- **Authentication**: JWT (djangorestframework-simplejwt)
-- **API Documentation**: drf-spectacular (OpenAPI/Swagger)
+### Backend (Supabase)
+- **Platform**: Supabase (Backend-as-a-Service)
+- **Database**: PostgreSQL 15+ (managed by Supabase)
+- **API**: Auto-generated REST API (PostgREST)
+- **Real-time**: Built-in real-time subscriptions via WebSockets
+- **Authentication**: Supabase Auth (JWT-based)
+- **Storage**: Supabase Storage (file uploads, avatars, exports)
+- **Edge Functions**: Deno-based serverless functions for custom logic
+- **Row Level Security (RLS)**: Database-level security policies
 
-**Key Python Packages:**
+**Why Supabase:**
+- ✅ Instant REST API from database schema
+- ✅ Built-in authentication with JWT
+- ✅ Real-time subscriptions out of the box
+- ✅ Row-level security for fine-grained access control
+- ✅ Managed PostgreSQL with automatic backups
+- ✅ No backend infrastructure to maintain
+- ✅ Generous free tier, scales automatically
+- ✅ TypeScript SDK for frontend integration
+
+**Supabase Features Used:**
+```typescript
+// Supabase client initialization
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_ANON_KEY
+)
 ```
-Django==5.0.1
-djangorestframework==3.14.0
-djangorestframework-simplejwt==5.3.1
-psycopg2-binary==2.9.9
-celery==5.3.6
-redis==5.0.1
-shopify-python-api==12.4.0
-sendgrid==6.11.0
-python-decouple==3.8
-drf-spectacular==0.27.1
-django-cors-headers==4.3.1
-django-filter==23.5
-Pillow==10.2.0
-python-dateutil==2.8.2
-pytz==2024.1
+
+### Edge Functions (for Custom Business Logic)
+- **Runtime**: Deno (TypeScript/JavaScript)
+- **Use Cases**:
+  - Shopify webhook processing
+  - Email sending via SendGrid
+  - Currency conversion
+  - Complex analytics calculations
+  - Scheduled tasks (cron jobs)
+
+**Key Edge Functions:**
+```
+supabase/functions/
+├── shopify-sync/           # Sync customers and orders from Shopify
+├── shopify-webhook/        # Process Shopify webhooks
+├── send-email/             # Send emails via SendGrid
+├── calculate-analytics/    # Generate analytics data
+└── scheduled-sync/         # Daily/hourly sync tasks
 ```
 
 ### Frontend
@@ -402,7 +424,7 @@ pytz==2024.1
 - **Build Tool**: Vite (faster than Create React App)
 - **State Management**: Zustand (lightweight, simpler than Redux)
 - **UI Components**: Tailwind CSS + shadcn/ui
-- **HTTP Client**: Axios
+- **HTTP Client**: Supabase JS Client (replaces Axios)
 - **Routing**: React Router v6
 - **Form Handling**: React Hook Form + Zod validation
 - **Charts**: Recharts
@@ -416,8 +438,8 @@ pytz==2024.1
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.1",
+    "@supabase/supabase-js": "^2.39.0",
     "zustand": "^4.4.7",
-    "axios": "^1.6.5",
     "react-hook-form": "^7.49.3",
     "zod": "^3.22.4",
     "@hookform/resolvers": "^3.3.4",
@@ -434,43 +456,41 @@ pytz==2024.1
 ```
 
 ### Development Environment
-- **Containerization**: Docker + Docker Compose
 - **Version Control**: Git + GitHub
-- **Development**: Hot reload for both frontend and backend
-- **Testing**: pytest (backend), Vitest + React Testing Library (frontend)
-- **Code Quality**: Black (Python formatter), ESLint + Prettier (TypeScript)
+- **Development**: Vite dev server with HMR
+- **Testing**: Vitest + React Testing Library (frontend), Deno test (Edge Functions)
+- **Code Quality**: ESLint + Prettier (TypeScript)
+- **Database Migrations**: Supabase CLI for migration management
 
 ### Integration Services
-- **Ecommerce**: Shopify (shopify-python-api)
-- **Email**: SendGrid or AWS SES
-- **File Storage**: AWS S3 (optional, or local storage for MVP)
+- **Ecommerce**: Shopify (via Edge Functions)
+- **Email**: SendGrid (via Edge Functions)
+- **File Storage**: Supabase Storage (built-in)
 - **Monitoring**: Sentry (error tracking)
 
 ### Project Structure
 ```
 simple-crm/
-├── backend/                    # Django project
-│   ├── config/                # Django settings
-│   │   ├── settings/
-│   │   │   ├── base.py
-│   │   │   ├── development.py
-│   │   │   └── production.py
-│   │   ├── urls.py
-│   │   └── wsgi.py
-│   ├── apps/
-│   │   ├── customers/         # Customer management app
-│   │   ├── orders/            # Order management app
-│   │   ├── activities/        # Activity tracking app
-│   │   ├── users/             # User management app
-│   │   ├── analytics/         # Analytics app
-│   │   ├── integrations/      # Integration framework
-│   │   └── communications/    # Email templates & sending
-│   ├── requirements/
-│   │   ├── base.txt
-│   │   ├── development.txt
-│   │   └── production.txt
-│   ├── manage.py
-│   └── pytest.ini
+├── supabase/                   # Supabase configuration
+│   ├── config.toml            # Supabase project config
+│   ├── migrations/            # Database migrations
+│   │   ├── 001_initial_schema.sql
+│   │   ├── 002_add_rls_policies.sql
+│   │   └── 003_create_functions.sql
+│   ├── functions/             # Edge Functions (Deno)
+│   │   ├── shopify-sync/
+│   │   │   └── index.ts
+│   │   ├── shopify-webhook/
+│   │   │   └── index.ts
+│   │   ├── send-email/
+│   │   │   └── index.ts
+│   │   ├── calculate-analytics/
+│   │   │   └── index.ts
+│   │   └── _shared/          # Shared utilities
+│   │       ├── supabase.ts
+│   │       └── types.ts
+│   └── seed.sql               # Seed data for development
+│
 ├── frontend/                   # React app
 │   ├── src/
 │   │   ├── components/        # Reusable UI components
@@ -483,10 +503,15 @@ simple-crm/
 │   │   ├── layouts/           # Page layouts
 │   │   ├── pages/             # Page components
 │   │   ├── hooks/             # Custom React hooks
+│   │   │   ├── useSupabase.ts
+│   │   │   ├── useAuth.ts
+│   │   │   └── useRealtime.ts
 │   │   ├── store/             # Zustand stores
-│   │   ├── services/          # API services
+│   │   ├── lib/               # Supabase client setup
+│   │   │   └── supabase.ts
 │   │   ├── utils/             # Utility functions
 │   │   ├── types/             # TypeScript types
+│   │   │   └── database.ts    # Auto-generated from Supabase
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   ├── public/
@@ -494,7 +519,7 @@ simple-crm/
 │   ├── tsconfig.json
 │   ├── vite.config.ts
 │   └── tailwind.config.js
-├── docker-compose.yml
+│
 ├── .env.example
 ├── .gitignore
 └── README.md
@@ -835,34 +860,41 @@ This section outlines a phased approach to building the complete CRM system. The
 **Goal**: Establish development environment and project foundation
 
 **Key Tasks:**
-- Set up Django project with multi-environment settings
+- Create Supabase project (hosted or local)
+- Install Supabase CLI for local development
 - Initialize React + TypeScript project with Vite
-- Configure Docker Compose (PostgreSQL, Redis, backend, frontend)
-- Set up Celery for async tasks
-- Configure JWT authentication
-- Create custom User model
+- Set up Supabase client in frontend
+- Configure environment variables
 - Initialize Git repository
+- Set up project structure
 
 **Deliverables:**
-- Fully configured development environment
-- Hot reload for both frontend and backend
+- Fully configured Supabase project
+- React frontend connected to Supabase
+- Hot reload for frontend
 - README with setup instructions
 
-### Phase 1-2: Core Backend & Authentication (Week 2-3)
-**Goal**: Build data models, API endpoints, and secure authentication
+### Phase 1-2: Database Schema & Authentication (Week 2-3)
+**Goal**: Create database schema and set up authentication
 
 **Key Tasks:**
-- Create Customer and Order models with all fields
-- Implement Django REST Framework ViewSets
-- Add filtering, search, and pagination
-- Implement JWT-based authentication
-- Create role-based access control (admin, manager, agent, readonly)
-- Add password reset flow
+- Design and create database schema (SQL migrations)
+  - customers, orders, order_items, activities, users tables
+  - Add indexes and constraints
+- Configure Supabase Auth with JWT
+- Set up Row Level Security (RLS) policies
+  - Admin can see/edit everything
+  - Managers can see all, edit assigned
+  - Agents can only see assigned customers
+  - Read-only can only view
+- Create database functions for common operations
+- Test API endpoints (auto-generated by Supabase)
 
 **Deliverables:**
-- Functional REST API for customers and orders
-- Secure authentication system
-- Basic API tests (>80% coverage)
+- Complete database schema with RLS
+- Authentication system with role-based access
+- Auto-generated REST API endpoints
+- Database migration files
 
 ### Phase 3-4: Frontend Foundation & Customer UI (Week 4-5)
 **Goal**: Build core UI components and customer management interface
@@ -884,31 +916,32 @@ This section outlines a phased approach to building the complete CRM system. The
 **Goal**: Enable activity tracking and order viewing
 
 **Key Tasks:**
-- Create Activity model and API
-- Build activity timeline component
+- Extend database schema for activities (if needed)
+- Build activity timeline component with real-time updates
 - Add activity creation modal
 - Implement order list and detail pages
 - Link orders to customers
+- Add file attachments (Supabase Storage)
 
 **Deliverables:**
-- Activity tracking functionality
+- Activity tracking functionality with real-time sync
 - Order management UI
-- File attachment support
+- File attachment support via Supabase Storage
 
 ### Phase 7-8: Shopify Integration & Email (Week 7-9)
 **Goal**: Sync data from Shopify and enable email communication
 
 **Key Tasks:**
-- Implement Shopify OAuth flow
-- Create sync services for customers and orders
-- Set up webhook receivers
-- Configure Celery tasks for background sync
-- Implement email template system
-- Integrate SendGrid/AWS SES
-- Add email sending UI
+- Create Edge Function for Shopify OAuth flow
+- Create Edge Function for syncing customers and orders
+- Create Edge Function for Shopify webhook receiver
+- Set up Supabase cron jobs for scheduled sync
+- Create email_templates table
+- Create Edge Function for sending emails via SendGrid
+- Add email template UI and sending modal
 
 **Deliverables:**
-- Working Shopify integration
+- Working Shopify integration via Edge Functions
 - Real-time webhook processing
 - Email sending capability
 
@@ -916,8 +949,9 @@ This section outlines a phased approach to building the complete CRM system. The
 **Goal**: Add analytics dashboard and power user features
 
 **Key Tasks:**
-- Build analytics service with Redis caching
-- Create dashboard with key metrics and charts
+- Create database views for analytics queries
+- Create Edge Function for calculating complex analytics
+- Build dashboard with key metrics and charts
 - Implement customer segmentation builder
 - Add tag management
 - Build bulk operations (add tags, export)
@@ -934,16 +968,18 @@ This section outlines a phased approach to building the complete CRM system. The
 **Goal**: Comprehensive testing and security hardening
 
 **Key Tasks:**
-- Write comprehensive backend tests (>80% coverage)
+- Write comprehensive tests for Edge Functions (Deno test)
 - Add frontend component and integration tests
+- Review and optimize RLS policies
 - Implement GDPR compliance features (data export, deletion)
-- Add audit logging
-- Implement rate limiting
+- Create audit_logs table and triggers
+- Configure Supabase API rate limiting
 - Security scanning and penetration testing
-- Input validation on all endpoints
+- Input validation with Zod schemas
 
 **Deliverables:**
 - Test coverage >80%
+- Secure RLS policies
 - GDPR-compliant features
 - Security audit completed
 - Audit trail system
@@ -952,17 +988,17 @@ This section outlines a phased approach to building the complete CRM system. The
 **Goal**: Optimize performance and deploy to production
 
 **Key Tasks:**
-- Database query optimization
-- Add response caching (Redis)
+- Database query optimization (indexes, views)
+- Optimize database functions and RLS policies
 - Frontend code splitting and lazy loading
-- Set up production Docker configuration
-- Configure CI/CD pipeline (GitHub Actions)
-- Set up monitoring (Sentry)
-- Configure automated backups
+- Set up production Supabase project
+- Configure CI/CD pipeline (GitHub Actions for frontend, Supabase for Edge Functions)
+- Set up monitoring (Sentry + Supabase logs)
+- Configure automated backups (built-in with Supabase)
 - Write comprehensive documentation
 
 **Deliverables:**
-- Production deployment
+- Production deployment on Supabase
 - API response time <200ms (p95)
 - CI/CD pipeline
 - Complete documentation
@@ -971,17 +1007,17 @@ This section outlines a phased approach to building the complete CRM system. The
 **Goal**: Add additional integrations, automation, and ML features
 
 **Key Tasks:**
-- Add WooCommerce integration
-- Build workflow automation engine
+- Create Edge Function for WooCommerce integration
+- Build workflow automation using database triggers and Edge Functions
 - Mobile optimization and PWA support
-- Implement customer health scoring
-- Add predictive analytics (churn prediction, LTV)
-- RFM analysis
+- Implement customer health scoring (Edge Function + database view)
+- Add predictive analytics (churn prediction, LTV) via Edge Functions
+- RFM analysis using database views
 - Final testing and polish
 
 **Deliverables:**
-- Multiple integrations
-- Workflow automation
+- Multiple integrations via Edge Functions
+- Workflow automation with triggers
 - PWA support
 - ML-powered insights
 - Production-ready system
@@ -1095,8 +1131,8 @@ For the complete week-by-week implementation plan with specific tasks, files, an
 
 ## Document Control
 
-**Version**: 2.0
-**Date**: 2026-01-19
+**Version**: 3.0
+**Date**: 2026-01-21
 **Author**: CPO, Cross-Border Ecommerce SaaS
 **Status**: Ready for Implementation
 
@@ -1106,4 +1142,5 @@ For the complete week-by-week implementation plan with specific tasks, files, an
 |---------|------|--------|---------|
 | 1.0 | 2026-01-19 | CPO | Initial system specification |
 | 2.0 | 2026-01-19 | CPO | Added selected technology stack (Django + React), detailed project structure, updated implementation phases with 24-week roadmap |
+| 3.0 | 2026-01-21 | CPO | **Major Update**: Replaced Django backend with Supabase (BaaS). Updated architecture to use Supabase PostgreSQL, auto-generated REST API, Edge Functions (Deno), Supabase Auth, Storage, and RLS. Updated all implementation phases accordingly. |
 

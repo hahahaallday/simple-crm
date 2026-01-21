@@ -86,27 +86,29 @@ A comprehensive, modern CRM system designed specifically for cross-border ecomme
 
 ## 🛠 Technology Stack
 
-### Backend
+### Backend (Supabase - BaaS)
 
-- **Framework**: Django 5.0 + Django REST Framework
-- **Language**: Python 3.11+
-- **Database**: PostgreSQL 16 (primary data store)
-- **Cache**: Redis 7.x (cache, sessions, queue)
-- **Task Queue**: Celery (background jobs)
-- **Authentication**: JWT (djangorestframework-simplejwt)
-- **API Documentation**: drf-spectacular (OpenAPI 3.0)
+- **Platform**: Supabase (Backend-as-a-Service)
+- **Database**: PostgreSQL 15+ (managed by Supabase)
+- **API**: Auto-generated REST API (PostgREST)
+- **Authentication**: Supabase Auth (JWT-based)
+- **Real-time**: Built-in WebSocket subscriptions
+- **Storage**: Supabase Storage (file uploads)
+- **Edge Functions**: Deno-based serverless functions
+- **Row-Level Security (RLS)**: Database-level authorization
 
-**Key Python Packages:**
-```
-Django==5.0.1
-djangorestframework==3.14.0
-djangorestframework-simplejwt==5.3.1
-psycopg2-binary==2.9.9
-celery==5.3.6
-redis==5.0.1
-shopify-python-api==12.4.0
-sendgrid==6.11.0
-```
+**Why Supabase:**
+- ✅ Instant REST API from database schema
+- ✅ No backend code to write
+- ✅ Built-in auth, real-time, and storage
+- ✅ Generous free tier, scales automatically
+- ✅ TypeScript SDK with auto-generated types
+
+**Edge Functions (Deno/TypeScript):**
+- Shopify integration and webhook processing
+- Email sending via SendGrid
+- Complex analytics calculations
+- Scheduled sync tasks
 
 ### Frontend
 
@@ -114,7 +116,7 @@ sendgrid==6.11.0
 - **Build Tool**: Vite (fast HMR)
 - **State Management**: Zustand (lightweight)
 - **UI Components**: Tailwind CSS + shadcn/ui
-- **HTTP Client**: Axios
+- **HTTP Client**: Supabase JS Client
 - **Routing**: React Router v6
 - **Forms**: React Hook Form + Zod validation
 - **Charts**: Recharts
@@ -125,8 +127,8 @@ sendgrid==6.11.0
 {
   "react": "^18.2.0",
   "react-router-dom": "^6.21.1",
+  "@supabase/supabase-js": "^2.39.0",
   "zustand": "^4.4.7",
-  "axios": "^1.6.5",
   "tailwindcss": "^3.4.1",
   "recharts": "^2.10.3"
 }
@@ -134,46 +136,50 @@ sendgrid==6.11.0
 
 ### DevOps
 
-- **Containerization**: Docker + Docker Compose
+- **Frontend Hosting**: Vercel / Netlify
+- **Backend**: Supabase (managed)
 - **CI/CD**: GitHub Actions
-- **Monitoring**: Sentry (error tracking)
-- **Testing**: pytest (backend), Vitest (frontend)
+- **Monitoring**: Sentry (error tracking) + Supabase logs
+- **Testing**: Vitest + React Testing Library (frontend), Deno test (Edge Functions)
 
 ---
 
 ## 🏗 Architecture
 
-This CRM follows a **layered architecture** with clear separation of concerns:
+This CRM uses **Supabase** as a Backend-as-a-Service platform:
 
 ```
 ┌─────────────────────────────────────────┐
 │     Presentation Layer (React)          │
 │  - UI Components, State Management      │
+│  - Supabase JS Client                   │
+└─────────────────────────────────────────┘
+                  ↓ ↑ (HTTPS)
+┌─────────────────────────────────────────┐
+│      Supabase Platform (BaaS)           │
+│  - PostgREST API (auto-generated)       │
+│  - Supabase Auth (JWT)                  │
+│  - Realtime (WebSockets)                │
+│  - Supabase Storage                     │
+│  - Edge Functions (Deno)                │
 └─────────────────────────────────────────┘
                   ↓ ↑
 ┌─────────────────────────────────────────┐
-│        API Layer (DRF)                  │
-│  - Authentication, Rate Limiting        │
-└─────────────────────────────────────────┘
-                  ↓ ↑
-┌─────────────────────────────────────────┐
-│   Business Logic Layer (Django Apps)    │
-│  - Services, ViewSets, Serializers      │
-└─────────────────────────────────────────┘
-                  ↓ ↑
-┌─────────────────────────────────────────┐
-│   Data Layer (PostgreSQL + Redis)      │
-│  - Database, Cache, Queue               │
+│   PostgreSQL Database                   │
+│  - Tables with RLS policies             │
+│  - Database functions & triggers        │
+│  - Views for analytics                  │
 └─────────────────────────────────────────┘
 ```
 
 **Key Architectural Decisions:**
 
-- **API-First Design**: RESTful API as the contract between frontend and backend
-- **Service Layer Pattern**: Business logic separated from views
-- **Asynchronous Processing**: Celery for long-running tasks (sync, email, webhooks)
-- **Stateless Services**: JWT authentication, no server-side sessions
-- **Security by Default**: HTTPS, CORS, rate limiting, RBAC
+- **BaaS-First**: Leverage Supabase managed services instead of custom backend
+- **Database-Driven API**: Auto-generated REST API from PostgreSQL schema
+- **Row-Level Security (RLS)**: Database-level authorization (cannot be bypassed)
+- **Edge Functions**: Deno-based serverless for custom business logic
+- **Real-time by Default**: Built-in WebSocket subscriptions
+- **Type-Safe**: TypeScript end-to-end with auto-generated database types
 
 For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -183,44 +189,44 @@ For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ```
 simple-crm/
-├── backend/                    # Django backend
-│   ├── config/                # Project configuration
-│   │   ├── settings/
-│   │   │   ├── base.py        # Base settings
-│   │   │   ├── development.py # Dev settings
-│   │   │   └── production.py  # Prod settings
-│   │   ├── urls.py            # Root URL config
-│   │   └── celery.py          # Celery config
-│   ├── apps/                  # Django applications
-│   │   ├── customers/         # Customer management
-│   │   ├── orders/            # Order management
-│   │   ├── activities/        # Activity tracking
-│   │   ├── users/             # User management
-│   │   ├── analytics/         # Analytics & reports
-│   │   ├── integrations/      # Integration framework
-│   │   └── communications/    # Email & templates
-│   ├── requirements/
-│   │   ├── base.txt           # Base dependencies
-│   │   ├── development.txt    # Dev dependencies
-│   │   └── production.txt     # Prod dependencies
-│   ├── manage.py
-│   └── pytest.ini
+├── supabase/                   # Supabase backend configuration
+│   ├── config.toml            # Supabase project config
+│   ├── migrations/            # Database migrations (SQL)
+│   │   ├── 20240101_create_users.sql
+│   │   ├── 20240102_create_customers.sql
+│   │   ├── 20240103_create_orders.sql
+│   │   ├── 20240104_create_activities.sql
+│   │   └── 20240105_rls_policies.sql
+│   ├── functions/             # Edge Functions (Deno/TypeScript)
+│   │   ├── shopify-sync/      # Sync Shopify data
+│   │   ├── shopify-webhook/   # Process Shopify webhooks
+│   │   ├── send-email/        # Send emails via SendGrid
+│   │   ├── calculate-analytics/ # Generate analytics
+│   │   └── _shared/           # Shared utilities
+│   └── seed.sql               # Seed data for development
 │
 ├── frontend/                   # React frontend
 │   ├── src/
-│   │   ├── components/        # Reusable components
-│   │   ├── features/          # Feature modules
-│   │   │   ├── customers/
-│   │   │   ├── orders/
-│   │   │   ├── activities/
-│   │   │   ├── analytics/
-│   │   │   └── settings/
+│   │   ├── components/        # Reusable UI components
+│   │   ├── features/          # Feature-specific modules
+│   │   │   ├── customers/     # Customer management
+│   │   │   ├── orders/        # Order management
+│   │   │   ├── activities/    # Activity tracking
+│   │   │   ├── analytics/     # Analytics & reports
+│   │   │   └── settings/      # Settings & integrations
+│   │   ├── hooks/             # Custom React hooks
+│   │   │   ├── useSupabase.ts # Supabase client hook
+│   │   │   ├── useAuth.ts     # Authentication hook
+│   │   │   ├── useRealtime.ts # Real-time subscriptions
+│   │   │   └── useCustomers.ts # Customer data hook
 │   │   ├── layouts/           # Page layouts
 │   │   ├── pages/             # Route pages
 │   │   ├── store/             # Zustand stores
-│   │   ├── services/          # API services
-│   │   ├── utils/             # Utilities
+│   │   ├── lib/               # Library setup
+│   │   │   └── supabase.ts    # Supabase client config
 │   │   ├── types/             # TypeScript types
+│   │   │   └── database.ts    # Auto-generated from Supabase
+│   │   ├── utils/             # Utilities
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   ├── public/
@@ -229,7 +235,6 @@ simple-crm/
 │   ├── vite.config.ts
 │   └── tailwind.config.js
 │
-├── docker-compose.yml          # Docker Compose config
 ├── .env.example                # Environment variables template
 ├── .gitignore
 ├── README.md                   # This file
@@ -244,13 +249,12 @@ simple-crm/
 
 ### Prerequisites
 
-- **Docker** (recommended) or manual setup:
-  - Python 3.11+
-  - Node.js 18+
-  - PostgreSQL 16
-  - Redis 7.x
+- **Node.js 18+** and **npm**
+- **Supabase CLI** - [Installation guide](https://supabase.com/docs/guides/cli)
+- **Deno** (for Edge Functions development) - [Installation guide](https://deno.land/manual/getting_started/installation)
+- **Supabase Account** - [Sign up for free](https://supabase.com)
 
-### Quick Start with Docker (Recommended)
+### Quick Start
 
 1. **Clone the repository**
    ```bash
@@ -258,94 +262,86 @@ simple-crm/
    cd simple-crm
    ```
 
-2. **Copy environment variables**
+2. **Set up Supabase project**
+
+   Create a new Supabase project at [supabase.com](https://supabase.com), then:
+
    ```bash
+   # Log in to Supabase CLI
+   supabase login
+
+   # Link to your Supabase project
+   supabase link --project-ref your-project-ref
+   ```
+
+3. **Run database migrations**
+   ```bash
+   supabase db push
+   ```
+
+4. **Set up environment variables**
+   ```bash
+   cd frontend
    cp .env.example .env
-   # Edit .env with your configuration
    ```
 
-3. **Start services**
-   ```bash
-   docker-compose up -d
+   Edit `.env` with your Supabase credentials:
+   ```env
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-key
    ```
 
-4. **Run database migrations**
+5. **Install frontend dependencies**
    ```bash
-   docker-compose exec backend python manage.py migrate
-   ```
-
-5. **Create superuser**
-   ```bash
-   docker-compose exec backend python manage.py createsuperuser
-   ```
-
-6. **Access the application**
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:8000/api/v1/
-   - API Documentation: http://localhost:8000/api/docs/
-   - Django Admin: http://localhost:8000/admin/
-
-### Manual Setup (Without Docker)
-
-#### Backend Setup
-
-1. **Create virtual environment**
-   ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements/development.txt
-   ```
-
-3. **Set up environment variables**
-   ```bash
-   export DATABASE_URL="postgresql://user:password@localhost:5432/crm_db"
-   export REDIS_URL="redis://localhost:6379/0"
-   export SECRET_KEY="your-secret-key"
-   export DEBUG=True
-   ```
-
-4. **Run migrations**
-   ```bash
-   python manage.py migrate
-   ```
-
-5. **Create superuser**
-   ```bash
-   python manage.py createsuperuser
+   npm install
    ```
 
 6. **Start development server**
    ```bash
-   python manage.py runserver
-   ```
-
-7. **Start Celery worker** (in another terminal)
-   ```bash
-   celery -A config worker -l info
-   ```
-
-#### Frontend Setup
-
-1. **Install dependencies**
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-2. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your backend API URL
-   ```
-
-3. **Start development server**
-   ```bash
    npm run dev
+   ```
+
+7. **Deploy Edge Functions** (optional for local dev)
+   ```bash
+   # Deploy all Edge Functions to Supabase
+   supabase functions deploy shopify-sync
+   supabase functions deploy shopify-webhook
+   supabase functions deploy send-email
+   supabase functions deploy calculate-analytics
+   ```
+
+8. **Access the application**
+   - Frontend: http://localhost:5173
+   - Supabase Studio (local): http://localhost:54323
+   - Supabase API: Provided by Supabase (auto-generated REST API)
+
+### Local Supabase Development (Optional)
+
+For completely local development without cloud connection:
+
+1. **Start local Supabase**
+   ```bash
+   supabase start
+   ```
+
+   This starts:
+   - PostgreSQL database
+   - PostgREST API server
+   - Supabase Studio (web UI)
+   - Auth server
+   - Storage server
+   - Realtime server
+
+2. **Get local credentials**
+   ```bash
+   supabase status
+   ```
+
+   Use the local credentials in your `.env` file.
+
+3. **Stop local Supabase**
+   ```bash
+   supabase stop
    ```
 
 ---
@@ -360,49 +356,62 @@ simple-crm/
    ```
 
 2. **Make your changes**
-   - Backend: Modify Django apps in `backend/apps/`
+   - Database: Create migration files in `supabase/migrations/`
+   - Edge Functions: Modify or add functions in `supabase/functions/`
    - Frontend: Modify React components in `frontend/src/`
 
-3. **Run tests**
+3. **Apply database changes**
    ```bash
-   # Backend tests
-   cd backend
-   pytest
+   # Create a new migration
+   supabase migration new your_migration_name
 
+   # Edit the migration file in supabase/migrations/
+   # Then push to database
+   supabase db push
+   ```
+
+4. **Test Edge Functions locally**
+   ```bash
+   # Serve a specific function locally
+   supabase functions serve shopify-sync --env-file .env
+   ```
+
+5. **Run tests**
+   ```bash
    # Frontend tests
    cd frontend
    npm test
+
+   # Edge Function tests (Deno)
+   cd supabase/functions/shopify-sync
+   deno test
    ```
 
-4. **Run linters**
+6. **Run linters**
    ```bash
-   # Backend (Python)
-   black .
-   flake8
-
    # Frontend (TypeScript)
    npm run lint
    npm run format
    ```
 
-5. **Commit your changes**
+7. **Commit your changes**
    ```bash
    git add .
    git commit -m "feat: add your feature description"
    ```
 
-6. **Push and create pull request**
+8. **Push and create pull request**
    ```bash
    git push origin feature/your-feature-name
    ```
 
 ### Code Style
 
-**Backend (Python):**
-- Follow PEP 8
-- Use Black for formatting
-- Use type hints where applicable
-- Max line length: 100 characters
+**Edge Functions (Deno/TypeScript):**
+- Follow Deno style guide
+- Use `deno fmt` for formatting
+- Use TypeScript strict mode
+- Prefer async/await over callbacks
 
 **Frontend (TypeScript):**
 - Follow Airbnb style guide
@@ -412,81 +421,143 @@ simple-crm/
 
 ### Database Migrations
 
-**Create migration:**
+**Create a new migration:**
 ```bash
-python manage.py makemigrations
+supabase migration new add_customer_tags
+```
+
+This creates a new SQL file in `supabase/migrations/`.
+
+**Example migration:**
+```sql
+-- supabase/migrations/20240101_add_customer_tags.sql
+CREATE TABLE customer_tags (
+    customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
+    tag_id UUID REFERENCES tags(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    PRIMARY KEY (customer_id, tag_id)
+);
+
+-- Add RLS policy
+ALTER TABLE customer_tags ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view customer tags"
+    ON customer_tags FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM users
+            WHERE id = auth.uid()
+        )
+    );
 ```
 
 **Apply migrations:**
 ```bash
-python manage.py migrate
+supabase db push
 ```
 
 **Rollback migration:**
 ```bash
-python manage.py migrate app_name previous_migration_name
+supabase db reset
 ```
 
-### API Development
+### Working with Supabase
 
-**Adding a new endpoint:**
+**Generate TypeScript types from database:**
+```bash
+supabase gen types typescript --local > frontend/src/types/database.ts
+```
 
-1. Create model in `models.py`
-2. Create serializer in `serializers.py`
-3. Create viewset in `views.py`
-4. Register URLs in `urls.py`
-5. Add tests in `tests/`
+**Access Supabase Studio (local):**
+```bash
+supabase start
+# Then open http://localhost:54323
+```
 
-**Example:**
-```python
-# models.py
-class Customer(models.Model):
-    email = models.EmailField(unique=True)
-    # ... other fields
+**View database logs:**
+```bash
+supabase logs db
+```
 
-# serializers.py
-class CustomerSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Customer
-        fields = '__all__'
+### Edge Functions Development
 
-# views.py
-class CustomerViewSet(viewsets.ModelViewSet):
-    queryset = Customer.objects.all()
-    serializer_class = CustomerSerializer
-    permission_classes = [IsAuthenticated]
+**Create a new Edge Function:**
+```bash
+supabase functions new my-function
+```
+
+**Example Edge Function:**
+```typescript
+// supabase/functions/send-email/index.ts
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+serve(async (req) => {
+  try {
+    const authHeader = req.headers.get('Authorization')!
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    )
+
+    const { to, subject, body } = await req.json()
+
+    // Your email sending logic here
+
+    return new Response(
+      JSON.stringify({ success: true }),
+      { headers: { 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+})
+```
+
+**Deploy Edge Function:**
+```bash
+supabase functions deploy send-email
+```
+
+**Invoke Edge Function:**
+```typescript
+// From frontend
+const { data, error } = await supabase.functions.invoke('send-email', {
+  body: { to: 'user@example.com', subject: 'Hello', body: 'Message' }
+})
 ```
 
 ---
 
 ## 🧪 Testing
 
-### Backend Testing
+### Edge Functions Testing
 
-**Run all tests:**
+**Run tests for a specific function:**
 ```bash
-cd backend
-pytest
-```
-
-**Run specific test file:**
-```bash
-pytest apps/customers/tests/test_models.py
+cd supabase/functions/shopify-sync
+deno test
 ```
 
 **Run with coverage:**
 ```bash
-pytest --cov=apps --cov-report=html
+deno test --coverage=coverage
+deno coverage coverage
 ```
 
-**Test structure:**
-```
-apps/customers/tests/
-├── __init__.py
-├── test_models.py
-├── test_serializers.py
-├── test_views.py
-└── test_services.py
+**Example test file:**
+```typescript
+// supabase/functions/shopify-sync/index.test.ts
+import { assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
+
+Deno.test('should sync customers from Shopify', async () => {
+  // Your test logic here
+  assertEquals(1 + 1, 2)
+})
 ```
 
 ### Frontend Testing
@@ -507,10 +578,38 @@ npm test -- --watch
 npm test -- --coverage
 ```
 
+**Example component test:**
+```typescript
+// frontend/src/components/CustomerCard.test.tsx
+import { render, screen } from '@testing-library/react'
+import { CustomerCard } from './CustomerCard'
+
+test('renders customer name', () => {
+  render(<CustomerCard customer={{ name: 'John Doe', email: 'john@example.com' }} />)
+  expect(screen.getByText('John Doe')).toBeInTheDocument()
+})
+```
+
+### Database Testing
+
+Test database functions and triggers:
+
+```sql
+-- Test in Supabase Studio or via SQL
+BEGIN;
+  -- Insert test data
+  INSERT INTO customers (email, first_name) VALUES ('test@example.com', 'Test');
+
+  -- Assert expected result
+  SELECT * FROM customers WHERE email = 'test@example.com';
+
+ROLLBACK;
+```
+
 ### Testing Strategy
 
-- **Unit Tests**: Test individual functions, components, models
-- **Integration Tests**: Test API endpoints, database queries
+- **Unit Tests**: Test individual functions, components, Edge Functions
+- **Integration Tests**: Test database queries, RLS policies, API interactions
 - **E2E Tests**: Test complete user flows (planned with Playwright)
 - **Target Coverage**: >80%
 
@@ -518,65 +617,148 @@ npm test -- --coverage
 
 ## 🚢 Deployment
 
-### Production Deployment with Docker
+### Supabase Backend Deployment
 
-1. **Build production images**
+Supabase is already deployed and managed as a Backend-as-a-Service. No backend deployment needed!
+
+**Deploy database migrations:**
+```bash
+# Link to your production Supabase project
+supabase link --project-ref your-production-project-ref
+
+# Push migrations to production
+supabase db push
+```
+
+**Deploy Edge Functions:**
+```bash
+# Deploy all functions
+supabase functions deploy shopify-sync
+supabase functions deploy shopify-webhook
+supabase functions deploy send-email
+supabase functions deploy calculate-analytics
+
+# Or deploy all at once
+supabase functions deploy --no-verify-jwt
+```
+
+**Set Edge Function secrets:**
+```bash
+# Set environment variables for Edge Functions
+supabase secrets set SENDGRID_API_KEY=your-key
+supabase secrets set SHOPIFY_API_KEY=your-key
+supabase secrets set SHOPIFY_API_SECRET=your-secret
+```
+
+### Frontend Deployment
+
+**Deploy to Vercel (Recommended):**
+
+1. **Install Vercel CLI**
    ```bash
-   docker build -t crm-backend:latest -f backend/Dockerfile.prod ./backend
-   docker build -t crm-frontend:latest -f frontend/Dockerfile.prod ./frontend
+   npm i -g vercel
    ```
 
-2. **Set production environment variables**
+2. **Deploy**
    ```bash
-   export DEBUG=False
-   export SECRET_KEY="your-production-secret-key"
-   export DATABASE_URL="postgresql://..."
-   export ALLOWED_HOSTS="yourdomain.com,www.yourdomain.com"
+   cd frontend
+   vercel --prod
    ```
 
-3. **Run migrations**
+3. **Set environment variables in Vercel dashboard:**
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+
+**Alternative: Deploy to Netlify:**
+
+1. **Install Netlify CLI**
    ```bash
-   docker-compose -f docker-compose.prod.yml run backend python manage.py migrate
+   npm i -g netlify-cli
    ```
 
-4. **Collect static files**
+2. **Build and deploy**
    ```bash
-   docker-compose -f docker-compose.prod.yml run backend python manage.py collectstatic --noinput
+   cd frontend
+   npm run build
+   netlify deploy --prod --dir=dist
    ```
 
-5. **Start production services**
-   ```bash
-   docker-compose -f docker-compose.prod.yml up -d
-   ```
+3. **Set environment variables in Netlify dashboard:**
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
 
 ### Environment Variables
 
-**Required:**
-- `SECRET_KEY`: Django secret key
-- `DATABASE_URL`: PostgreSQL connection string
-- `REDIS_URL`: Redis connection string
-- `ALLOWED_HOSTS`: Comma-separated list of allowed hosts
+**Frontend (.env.production):**
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
 
-**Optional:**
-- `DEBUG`: Set to `False` in production
-- `SENDGRID_API_KEY`: SendGrid API key for email
-- `SHOPIFY_API_KEY`: Shopify integration key
-- `SHOPIFY_API_SECRET`: Shopify integration secret
-- `SENTRY_DSN`: Sentry error tracking DSN
-- `AWS_ACCESS_KEY_ID`: AWS S3 access key
-- `AWS_SECRET_ACCESS_KEY`: AWS S3 secret key
-- `AWS_STORAGE_BUCKET_NAME`: S3 bucket name
-
-See `.env.example` for complete list.
+**Edge Function Secrets (via Supabase CLI):**
+```bash
+supabase secrets set SENDGRID_API_KEY=your-sendgrid-key
+supabase secrets set SHOPIFY_API_KEY=your-shopify-key
+supabase secrets set SHOPIFY_API_SECRET=your-shopify-secret
+```
 
 ### CI/CD Pipeline
 
-GitHub Actions automatically:
-- Runs tests on every push
-- Builds Docker images
-- Deploys to production on merge to `main`
+**GitHub Actions example:**
 
-See `.github/workflows/deploy.yml` for configuration.
+```yaml
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Supabase CLI
+        run: npm install -g supabase
+
+      - name: Deploy migrations
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Deploy Edge Functions
+        run: supabase functions deploy
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Deploy Frontend to Vercel
+        run: |
+          cd frontend
+          npm install
+          vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+```
+
+### Production Checklist
+
+- [ ] Supabase project created
+- [ ] Database migrations applied
+- [ ] Row-Level Security (RLS) policies enabled on all tables
+- [ ] Edge Functions deployed
+- [ ] Edge Function secrets configured
+- [ ] Frontend deployed to Vercel/Netlify
+- [ ] Environment variables set
+- [ ] Custom domain configured (optional)
+- [ ] SSL certificate active (automatic with Vercel/Netlify)
+- [ ] Monitoring set up (Supabase Dashboard)
+- [ ] Backups enabled (automatic with Supabase)
 
 ---
 
@@ -606,9 +788,17 @@ Comprehensive documentation is available in the following files:
 
 ### API Documentation
 
-Interactive API documentation is available at:
-- **Swagger UI**: http://localhost:8000/api/docs/
-- **OpenAPI Schema**: http://localhost:8000/api/schema/
+Supabase provides **auto-generated API documentation** based on your database schema:
+
+**Local Development:**
+- **Supabase Studio**: http://localhost:54323
+- **API Reference**: Auto-generated PostgREST API documentation in Supabase Studio
+- **Database Schema**: View in Studio → Database section
+
+**Production:**
+- **Supabase Dashboard**: https://app.supabase.com
+- **API Docs**: Available in your project dashboard → API section
+- **Auto-generated TypeScript types**: Run `supabase gen types typescript` to generate types from your database schema
 
 ---
 
@@ -616,66 +806,66 @@ Interactive API documentation is available at:
 
 ### Current Status: Phase 0 - Planning ✅
 
-All planning documents complete. Ready to begin implementation.
+All planning documents complete. Supabase architecture finalized. Ready to begin implementation.
 
-### Implementation Timeline (24 weeks)
+### Implementation Timeline (16-20 weeks)
+
+**Note:** Using Supabase significantly reduces development time compared to building a custom backend.
 
 #### Phase 0: Project Setup (Week 1) - **NEXT**
-- Set up Django project with multi-environment settings
+- Create Supabase project and configure
 - Initialize React + TypeScript with Vite
-- Configure Docker Compose
-- Set up Celery and Redis
-- Create base project structure
+- Create database migrations (SQL)
+- Set up Row-Level Security (RLS) policies
+- Configure Supabase client in frontend
 
-#### Phase 1-2: Core Backend (Week 2-3)
-- Customer and Order models
-- Django REST Framework API
-- JWT authentication
-- Role-based access control
-
-#### Phase 3-4: Frontend Foundation (Week 4-5)
-- Authentication UI
+#### Phase 1-2: Core Database & Frontend (Week 2-3)
+- Customer and Order tables with RLS
+- Authentication UI (Supabase Auth)
 - Main layout and navigation
 - Customer management UI
-- Reusable component library
+- Real-time subscriptions
 
-#### Phase 5-6: Activities & Orders (Week 5-6)
-- Activity tracking
+#### Phase 3-4: Activities & Analytics (Week 4-5)
+- Activity tracking table and UI
 - Order management UI
-- File attachments
+- Basic analytics dashboard
+- File uploads (Supabase Storage)
 
-#### Phase 7-8: Integrations (Week 7-9)
-- Shopify OAuth and sync
-- Email integration (SendGrid/AWS SES)
-- Webhook processing
+#### Phase 5-6: Edge Functions & Integrations (Week 6-8)
+- Shopify sync Edge Function
+- Shopify webhook handler
+- Email sending Edge Function
+- Integration management UI
 
-#### Phase 9-11: Analytics (Week 9-13)
-- Analytics dashboard
+#### Phase 7-8: Advanced Features (Week 9-11)
 - Customer segmentation
 - Bulk operations
 - Team management
+- Advanced analytics
 
-#### Phase 12-13: Testing & Security (Week 13-15)
+#### Phase 9-10: Testing & Security (Week 12-14)
 - Comprehensive testing (>80% coverage)
-- GDPR compliance
-- Security audit
-- Penetration testing
-
-#### Phase 14-15: Deployment (Week 15-17)
+- RLS policy audit
+- Security review
 - Performance optimization
-- Production deployment
-- CI/CD pipeline
-- Monitoring setup
 
-#### Phase 16-20: Advanced Features (Week 17-24)
+#### Phase 11-12: Production & Launch (Week 15-16)
+- Deploy to Vercel/Netlify
+- CI/CD pipeline setup
+- Monitoring and logging
+- Production testing
+
+#### Phase 13+: Post-Launch (Week 17+)
 - WooCommerce integration
 - Workflow automation
 - PWA support
-- ML-powered insights (churn prediction, LTV)
-- Final polish and launch
+- ML-powered insights
+- User feedback iteration
 
-**Target Launch**: Week 24 (Full Production)
-**MVP Launch**: Week 12 (Basic functionality)
+**Target MVP Launch**: Week 11-12 (Core functionality)
+**Full Launch**: Week 16 (All features)
+**Advanced Features**: Week 17+ (Ongoing)
 
 For detailed week-by-week breakdown, see [SYSTEM_SPEC.md - Section 10](SYSTEM_SPEC.md#10-implementation-phases).
 
@@ -691,7 +881,7 @@ We welcome contributions! Please follow these guidelines:
 2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
 3. **Make your changes**
 4. **Write tests** for your changes
-5. **Ensure all tests pass** (`pytest` and `npm test`)
+5. **Ensure all tests pass** (`npm test` for frontend, `deno test` for Edge Functions)
 6. **Commit your changes** (`git commit -m 'feat: add amazing feature'`)
 7. **Push to the branch** (`git push origin feature/amazing-feature`)
 8. **Open a Pull Request**
